@@ -4,9 +4,16 @@ var exphbs = require('express-handlebars');
 var path = require('path');
 var bodyParser = require('body-parser')
 
-server.get('/', function(req, res){res.render('main');});
+server.get('/', (req, res) => {res.render('main');});
 
-server.listen(3000, function(){console.log('listening on *:3000');});
+server.get('/interface', (req,res) => {
+    res.render('interface', {
+        song: 'a song',
+        mood: 'hyped',
+    });
+});
+
+server.listen(3000, () => {console.log('listening on *:3000');});
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());

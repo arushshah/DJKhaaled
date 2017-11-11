@@ -18,7 +18,7 @@ server.get('/interface', (req,res) => {
 
 server.get('/code', (req,res) => {
     res.send(groupID);
-})
+});
 
 server.listen(3000, () => {console.log('listening on *:3000');});
 

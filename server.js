@@ -1,12 +1,12 @@
 //Configuration steps
-var server = require('express')();
-var exphbs = require('express-handlebars');
-var path = require('path');
-var bodyParser = require('body-parser')
+const server = require('express')();
+const exphbs = require('express-handlebars');
+const path = require('path');
+const bodyParser = require('body-parser')
 
 server.get('/', (req, res) => {res.render('main');});
 
-var groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6)
+const groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6)
 
 server.get('/interface', (req,res) => {
     res.render('interface', {

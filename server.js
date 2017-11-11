@@ -1,15 +1,17 @@
-//This is the basic server configuration.
-
+//Configuration steps
 var server = require('express')();
-var http = require('http').Server(server);
-var io = require('socket.io')(http);
+var exphbs = require('express-handlebars');
+var path = require('path');
+var bodyParser = require('body-parser')
 
-server.get('/', function(req, res){
-    res.sendFile(`${__dirname}/index.html`);
-});
+server.get('/', function(req, res){res.render('main');});
 
-http.listen(3000, function(){
-    console.log('listening on *:3000');
-});
+server.listen(3000, function(){console.log('listening on *:3000');});
 
-io.on('connection', function(socket){});
+//Middleware for parsing incoming requests
+server.use(bodyParser.json());
+server.use(bodyParser.urlencoded({ extended: false }));
+
+server.set('views', path.join(__dirname, 'views'));
+server.engine('handlebars', exphbs({defaultLayout:'layout'}));
+server.set('view engine', 'handlebars');

@@ -1,3 +1,5 @@
+//This is the basic server configuration.
+
 var server = require('express')();
 var http = require('http').Server(server);
 var io = require('socket.io')(http);

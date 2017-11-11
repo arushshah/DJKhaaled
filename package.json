@@ -1,0 +1,16 @@
+{
+  "name": "djkhaaled",
+  "version": "1.0.0",
+  "description": "automated DJ",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2",
+    "nodemon": "^1.12.1",
+    "socket.io": "^2.0.4"
+  }
+}

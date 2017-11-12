@@ -10,6 +10,7 @@ const https = require('https');
 var myPythonScriptPath = 'script.py';
 var PythonShell = require('python-shell');
 const Player = require('player');
+const _ = require('underscore');
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());
@@ -105,27 +106,25 @@ server.get('/authentication', (req,res) => {
               url: 'https://api.spotify.com/v1/recommendations?' + 
               querystring.stringify({
                     seed_genres: 'party,hip-hop',
-                    min_popularity: 80,
-                    min_danceability: 0.6,
-                    min_energy: 0.5
+                    max_danceability: 1,
+                    max_energy: 0.3,
+                    limit: 100
                 }),
               headers: {'Authorization': ` Bearer ${token}`},
               json: true
             };
             request(options, (error,response,body) => {
                 if (!error && response.statusCode === 200) {
+                    let player = new Player();
                     body.tracks.forEach(track => {
-                        if (track.preview_url !== null) {
-                            let filePath = path.join(`${__dirname}/soundFiles/${track.name.split(" ").join("")}.mp3`);
-                            let file = fs.createWriteStream(filePath);
-                            https.get(track.preview_url, (response) => {
-                                response.pipe(file);
-                            });                       
+                        if (track.preview_url !== null) { 
+                            player.add(track.preview_url);         
                         }
                     });
-                    let player = new Player(`./soundFiles/HipsDon'tLie.mp3`);
-                    player.play(function(err, player){
-                        console.log('playend!');
+                    player.play();
+                    player.on('playing',function(item) {
+                        let song = _.findWhere(body.tracks, {preview_url: item.src})
+                        console.log(song.name);
                     });
                 }
             });

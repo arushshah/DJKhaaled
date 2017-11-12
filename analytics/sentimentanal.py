@@ -57,7 +57,7 @@ highThresh = 32
 
 sentimentScore = iqrX+iqrY+iqrZ
 
-print(sentimentScore)
+#print(sentimentScore)
 
 if (sentimentScore < 12):
 	sentimentScore = 12

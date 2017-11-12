@@ -7,6 +7,8 @@ const fs = require('fs');
 const querystring = require('querystring');
 const request = require('request');
 const https = require('https');
+var myPythonScriptPath = 'script.py';
+var PythonShell = require('python-shell');
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());
@@ -28,50 +30,52 @@ server.get('/interface', (req,res) => {
 });
 
 //GET endpoint for groupID
-server.get('/code', (req,res) => {res.send(groupID);});
+server.get('/code', (req,res) => {
+    res.send(groupID);
+});
 
 //POST endpoint for sensor data 
 //Should be in form {username: data}
-server.post('/sensordata', (req,res) => {console.log(req.body);});
 server.post('/sensordata/:name/:data', (req,res) => {
-    console.log(req.params.name + ": " + req.params.data);
-    res.send("");
-});
 
-//POST endpoint to initialize file for user
-server.post('/initializeFile/:username', (req,res) => {
-    let filePath = path.join(`${__dirname}/userFiles/${req.params.username}.txt`);
+	filePath = path.join(`${__dirname}/userFiles/${req.params.name}.txt`);
 
     //Initializes username.txt file in the userFiles directory
-    fs.writeFileSync(filePath,'', err => {
+
+    console.log(req.params.name + ": " + req.params.data);
+
+    var fs = require('fs');
+
+    var dataArr = req.params.data.split(" ")
+
+    var x = []
+    var y = []
+    var z = []
+
+    for (var i = 0; i < dataArr.length; i++) {
+    	if (i%3 == 0) {
+    		x.push(dataArr[i]);
+    	}
+    	else if (i%3 == 1) {
+    		y.push(dataArr[i]);
+    	}
+    	else if (i%3 == 2) {
+    		z.push(dataArr[i]);
+    	}
+    	
+    }
+
+    fs.writeFileSync(filePath,x.toString()+"\n", {'flag' : 'w'}, err => {
         if (err) {throw err;}
     });
-});
 
-//Endpoint to get access token for client to server authentication
-server.get('/callback', (req,res) => {
-    console.log(req.query.code);
-    console.log(req.query.state);
-    res.render('interface', {
-        song: 'a song',
-        mood: 'hyped',
-        groupID: groupID,
+    fs.writeFileSync(filePath,y.toString()+"\n", {'flag' : 'a'}, err => {
+        if (err) {throw err;}
     });
-});
 
-const client_id = '6f9a8f3d71f64e21bb9b2b00f2314f9e';
-const client_secret = '70e20432e1354991bf750c11f2ca047b';
-const redirect_uri = 'http://localhost:3000/callback';
-
-//Endpoint to start client to server authentication
-server.get('/login', (req,res) => {
-    res.redirect('https://accounts.spotify.com/authorize?' +
-    querystring.stringify({
-      response_type: 'code',
-      client_id: client_id,
-      redirect_uri: redirect_uri,
-    }));
-});
+    fs.writeFileSync(filePath,z.toString()+"\n", {'flag' : 'a'}, err => {
+        if (err) {throw err;}
+    });
 
 //Endpoint for server to server authentication
 server.get('/authentication', (req,res) => {
@@ -110,6 +114,24 @@ server.get('/authentication', (req,res) => {
             });
         };
     })
+	
+    res.send("");
+
+    var options = {
+        mode: 'text'
+    };
+
+    PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
+        if (err) throw err;
+        // results is an array consisting of messages collected during execution
+        console.log(results[0]);
+    });
+});
+
+//POST endpoint to initialize file for user
+server.post('/removeUser/:username', (req,res) => {
+	console.log(req.params.username);
+	fs.unlinkSync('userFiles/' + req.params.username + '.txt');
 });
 
 server.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});

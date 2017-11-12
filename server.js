@@ -4,6 +4,8 @@ const exphbs = require('express-handlebars');
 const path = require('path');
 const bodyParser = require('body-parser');
 const fs = require('fs');
+var myPythonScriptPath = 'script.py';
+var PythonShell = require('python-shell');
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());
@@ -74,6 +76,16 @@ server.post('/sensordata/:name/:data', (req,res) => {
 
 	
     res.send("");
+
+    var options = {
+        mode: 'text'
+    };
+
+    PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
+        if (err) throw err;
+        // results is an array consisting of messages collected during execution
+        console.log(results[0]);
+    });
 });
 
 //POST endpoint to initialize file for user

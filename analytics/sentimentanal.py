@@ -1,14 +1,14 @@
 import os
 import math
-import tkinter
+import Tkinter
 import numpy as np
 from matplotlib import pyplot as plt
 import random
 
 os.getcwd()
-os.chdir("../userFiles")
+os.chdir("userFiles/")
 
-files = os.listdir()
+files = os.listdir(os.getcwd())
 
 xData = []
 yData = []
@@ -69,5 +69,5 @@ scaledScore = (sentimentScore - lowThresh)/(highThresh-lowThresh)
 
 print(scaledScore)
 
-plt.show()
+#plt.show()
 

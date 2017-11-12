@@ -45,7 +45,7 @@ server.post('/initializeFile/:username', (req,res) => {
     });
 });
 
-server.listen(3000, () => {console.log('listening on *:3000');});
+server.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});
 
 server.set('views', path.join(__dirname, 'views'));
 server.engine('handlebars', exphbs({defaultLayout:'layout'}));

@@ -22,13 +22,6 @@ server.use(bodyParser.urlencoded({ extended: false }));
 
 http.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});
 
-io.on('connection', function(socket){
-    socket.on('loaded', function(msg){
-        console.log('connected');
-        io.emit('audio change', "https://p.scdn.co/mp3-preview/1673c8436d116e161c7a79c373812810f9dc6d3b?cid=6f9a8f3d71f64e21bb9b2b00f2314f9e%27");        
-    });
-});
-
 server.set('views', path.join(__dirname, '/views'));
 server.engine('handlebars', exphbs({defaultLayout:'layout'}));
 server.set('view engine', 'handlebars');
@@ -39,57 +32,72 @@ server.get('/', (req, res) => {res.redirect('/authentication');});
 //Random groupID
 const groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
 var sentimentScore = 0.0;
+var urlObjQueue = [];
+var urlObj;
+
+io.on('connection', function(socket){
+    socket.on('loaded', function(msg){
+        console.log('connected');
+    });
+});
 
 //User-facing web interface endpoint
 server.get('/interface/:access_token', (req,res) => {
-    sentimentScore = parseInt(req.params.sentimentScore);
     token = req.params.access_token;
+    let mood = '';
+    let min_danceability = 0.5;
+    let min_energy = sentimentScore - 0.1;
+    let max_energy = sentimentScore + 0.1;
+    if (min_energy < 0) {
+        max_energy = 0.2;
+        min_energy = 0;
+    }
+    else if (max_energy > 1) {
+        min_energy = 0.8;
+        max_energy = 1;
+    }
+    if (sentimentScore >= 0 && sentimentScore >= 0.2) {
+        mood = 'Dead';
+    }
+    else if (sentimentScore > 0.2 && sentimentScore <= 0.4) {
+        mood = 'Just Breathing';
+    }
+    else if (sentimentScore > 0.4 && sentimentScore <= 0.6) {
+        mood = 'Neutral'
+    }
+    else if (sentimentScore > 0.6 && sentimentScore <= 0.8) {
+        mood = `Hey, that's pretty good`;
+    }
+    else {
+        mood = 'Animalistic'
+    }
     let options = {
-      url: 'https://api.spotify.com/v1/recommendations?' + 
-      querystring.stringify({
-            seed_genres: 'party,hip-hop',
-            min_danceability: 0.7,
-            min_energy: 0.7,
-            limit: 100
-        }),
-      headers: {'Authorization': `Bearer ${token}`},
-      json: true
+        url: 'https://api.spotify.com/v1/recommendations?' + 
+        querystring.stringify({
+                seed_genres: 'party,hip-hop',
+                min_danceability: min_danceability,
+                min_energy: min_energy,
+                max_energy: max_energy,
+                limit: 100
+            }),
+        headers: {'Authorization': `Bearer ${token}`},
+        json: true
     };
-    let song = '';
     request(options, (error,response,body) => {
         if (!error && response.statusCode === 200) {
             body.tracks.forEach(track => {
                 if (track.preview_url !== null) { 
-                    player.add(track.preview_url, {name: track.name, url: track.preview_url});         
+                    urlObjQueue.push({name: track.name, url: track.preview_url});         
                 }
-            });           
-            /*player.play(); 
-            player.on('play end', function() {
-                player.play(); 
-            });*/          
-            let mood = '';
-            if (sentimentScore >= 0 && sentimentScore >= 0.2) {
-                mood = 'Dead';
-            }
-            else if (sentimentScore > 0.2 && sentimentScore <= 0.4) {
-                mood = 'Just Breathing';
-            }
-            else if (sentimentScore > 0.4 && sentimentScore <= 0.6) {
-                mood = 'Neutral'
-            }
-            else if (sentimentScore > 0.6 && sentimentScore <= 0.8) {
-                mood = `Hey, that's pretty good`;
-            }
-            else {
-                mood = 'Animalistic'
-            }
-                
-            res.render('interface', {
-                song: song,
-                mood: mood,
-                groupID: groupID,
             });
+            urlObj = urlObjQueue.pop();
+            console.log('Emitted event');   
+            io.emit('audio change', urlObj.url);
         }
+    });
+    res.render('interface', {
+        mood: mood,
+        groupID: groupID,
     });
 });
 
@@ -148,7 +156,7 @@ server.post('/sensordata/:name/:data', (req,res) => {
     PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
         if (err) throw err;
         // results is an array consisting of messages collected during execution
-        let sentimentScore = results[0];
+        sentimentScore = results[0];
         console.log(sentimentScore);
     });
 

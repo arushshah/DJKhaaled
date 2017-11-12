@@ -41,12 +41,14 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script>
-    $(document).ready(function () {
-      var socket = io();
-      socket.on('audio change', function(newURL){
-        $('#player').attr("src", "https://p.scdn.co/mp3-preview/1673c8436d116e161c7a79c373812810f9dc6d3b?cid=6f9a8f3d71f64e21bb9b2b00f2314f9e%27");
+    $(document).ready(function() {
+        console.log("Started jquery");
+        var socket = io();
+        socket.on('audio change', function(newURL){
+            $('#player').attr("src", newURL);  
+            console.log('finished jquery');  
+        });
       });
-    });
   </script>
 
     <audio id="player" src="" autoplay></audio>
@@ -66,12 +68,6 @@
 		<br>
 		<br>
 		<br>
-	   
-	    <h3>Current Song</h3>
-	    <h1><i>{{song}}</i></h1>
-	    <br>
-	    <br>
-	    <br>
 	    
 	    <h3>Crowd Mood</h3>
 	    <h1><i>{{mood}}</i></h1>

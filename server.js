@@ -9,10 +9,17 @@ const request = require('request');
 const https = require('https');
 var myPythonScriptPath = 'script.py';
 var PythonShell = require('python-shell');
+const Player = require('player');
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
+
+server.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});
+
+server.set('views', path.join(__dirname, '/views'));
+server.engine('handlebars', exphbs({defaultLayout:'layout'}));
+server.set('view engine', 'handlebars');
 
 //Main page endpoint
 server.get('/', (req, res) => {res.render('main');});
@@ -76,6 +83,10 @@ server.post('/sensordata/:name/:data', (req,res) => {
     fs.writeFileSync(filePath,z.toString()+"\n", {'flag' : 'a'}, err => {
         if (err) {throw err;}
     });
+});
+
+const client_id = '6f9a8f3d71f64e21bb9b2b00f2314f9e';
+const client_secret = '70e20432e1354991bf750c11f2ca047b';
 
 //Endpoint for server to server authentication
 server.get('/authentication', (req,res) => {
@@ -101,19 +112,29 @@ server.get('/authentication', (req,res) => {
               headers: {'Authorization': ` Bearer ${token}`},
               json: true
             };
-            request(options, (error,response,body) =>{
+            request(options, (error,response,body) => {
                 if (!error && response.statusCode === 200) {
                     body.tracks.forEach(track => {
-                        let filePath = path.join(`${__dirname}/soundFiles/${track.name.split(" ").join("")}.mp3`)
-                        let file = fs.createWriteStream(filePath);
-                        https.request(track.preview_URL, (response) => {
-                            response.pipe(file);
-                        });
+                        if (track.preview_url !== null) {
+                            let filePath = path.join(`${__dirname}/soundFiles/${track.name.split(" ").join("")}.mp3`);
+                            let file = fs.createWriteStream(filePath);
+                            https.get(track.preview_url, (response) => {
+                                response.pipe(file);
+                            });     
+                            let player = new Player(track.preview_url);
+                            /*player.play(function(err, player){
+                                console.log('playend!');
+                            });*/                    
+                        }
                     });
+                    /*let player = new Player(`./soundFiles/HipsDon'tLie.mp3`);
+                    player.play(function(err, player){
+                        console.log('playend!');
+                    });*/
                 }
             });
         };
-    })
+    });
 	
     res.send("");
 
@@ -133,9 +154,3 @@ server.post('/removeUser/:username', (req,res) => {
 	console.log(req.params.username);
 	fs.unlinkSync('userFiles/' + req.params.username + '.txt');
 });
-
-server.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});
-
-server.set('views', path.join(__dirname, '/views'));
-server.engine('handlebars', exphbs({defaultLayout:'layout'}));
-server.set('view engine', 'handlebars');

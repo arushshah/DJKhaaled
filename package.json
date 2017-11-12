@@ -13,6 +13,7 @@
     "express": "^4.16.2",
     "express-handlebars": "^3.0.0",
     "nodemon": "^1.12.1",
+    "player": "^0.6.1",
     "python-shell": "^0.4.0",
     "request": "^2.83.0"
   },

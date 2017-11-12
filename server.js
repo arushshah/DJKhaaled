@@ -9,7 +9,6 @@ const request = require('request');
 const https = require('https');
 var myPythonScriptPath = 'script.py';
 var PythonShell = require('python-shell');
-const Player = require('player');
 const _ = require('underscore');
 
 //Middleware for parsing incoming requests
@@ -115,16 +114,11 @@ server.get('/authentication', (req,res) => {
             };
             request(options, (error,response,body) => {
                 if (!error && response.statusCode === 200) {
-                    let player = new Player();
+                    
                     body.tracks.forEach(track => {
                         if (track.preview_url !== null) { 
-                            player.add(track.preview_url);         
+                            console.log(track.preview_url);         
                         }
-                    });
-                    player.play();
-                    player.on('playing',function(item) {
-                        let song = _.findWhere(body.tracks, {preview_url: item.src})
-                        console.log(song.name);
                     });
                 }
             });

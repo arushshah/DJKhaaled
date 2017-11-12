@@ -14,7 +14,6 @@
     "express-handlebars": "^3.0.0",
     "node-gyp": "^3.6.2",
     "nodemon": "^1.12.1",
-    "player": "^0.6.1",
     "python-shell": "^0.4.0",
     "request": "^2.83.0",
     "underscore": "^1.8.3"

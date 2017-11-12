@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const querystring = require('querystring');
 const request = require('request');
-
+const https = require('https');
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());
@@ -77,7 +77,7 @@ server.get('/login', (req,res) => {
 server.get('/authentication', (req,res) => {
     let authOptions = {
         url: 'https://accounts.spotify.com/api/token',
-        headers: {'Authorization': `Basic ${(new Buffer(`${client_id} : ${client_secret}`).toString('base64'))}`},
+        headers: {'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))},
         form: {grant_type: 'client_credentials'},
         json: true
     };
@@ -85,18 +85,28 @@ server.get('/authentication', (req,res) => {
     request.post(authOptions, (error,response,body) => {
         if (!error && response.statusCode === 200) {
             let token = body.access_token;
+            let token_type = body.token_type;
             let options = {
-              url: 'https://api.spotify.com/v1/recommendations' + 
+              url: 'https://api.spotify.com/v1/recommendations?' + 
               querystring.stringify({
-                    min_danceability: 1.0,
+                    seed_genres: 'party,hip-hop',
+                    min_popularity: 80,
+                    min_danceability: 0.6,
                     min_energy: 0.5
                 }),
-              headers: {'Authorization': `Bearer ${token}`},
+              headers: {'Authorization': ` Bearer ${token}`},
               json: true
             };
-            request.get(options, (error,response,body) =>{
-                if (error ) {throw error;}
-                body.forEach(track => console.log(track.name));
+            request(options, (error,response,body) =>{
+                if (!error && response.statusCode === 200) {
+                    body.tracks.forEach(track => {
+                        let filePath = path.join(`${__dirname}/soundFiles/${track.name.split(" ").join("")}.mp3`)
+                        let file = fs.createWriteStream(filePath);
+                        https.request(track.preview_URL, (response) => {
+                            response.pipe(file);
+                        });
+                    });
+                }
             });
         };
     })

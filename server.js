@@ -31,7 +31,7 @@ server.get('/', (req, res) => {res.redirect('/authentication');});
 
 //Random groupID
 const groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
-var sentimentScore = 0.0;
+var sentimentScore = null;
 var urlObjQueue = [];
 var urlObj;
 
@@ -42,59 +42,59 @@ io.on('connection', function(socket){
 });
 
 //User-facing web interface endpoint
-server.get('/interface/:access_token', (req,res) => {
+server.get('/interface/:access_token/', (req,res) => {
     token = req.params.access_token;
     let mood = '';
-    let min_danceability = 0.5;
-    let min_energy = sentimentScore - 0.1;
-    let max_energy = sentimentScore + 0.1;
-    if (min_energy < 0) {
-        max_energy = 0.2;
-        min_energy = 0;
-    }
-    else if (max_energy > 1) {
-        min_energy = 0.8;
-        max_energy = 1;
-    }
-    if (sentimentScore >= 0 && sentimentScore >= 0.2) {
+    let min_tempo = 0;
+    let max_tempo = 0;
+    if (sentimentScore >= 0 && sentimentScore <= 0.2) {
         mood = 'Dead';
+        min_tempo = 190;
     }
     else if (sentimentScore > 0.2 && sentimentScore <= 0.4) {
         mood = 'Just Breathing';
+        min_tempo = 160;
+        max_tempo = 190;
     }
     else if (sentimentScore > 0.4 && sentimentScore <= 0.6) {
-        mood = 'Neutral'
+        mood = 'Neutral';
+        min_tempo = 130;
+        max_tempo = 160;
     }
     else if (sentimentScore > 0.6 && sentimentScore <= 0.8) {
         mood = `Hey, that's pretty good`;
+        min_tempo = 160;
+        max_tempo = 190;
     }
     else {
-        mood = 'Animalistic'
+        mood = 'Animalistic';
+        max_tempo = 160;
     }
     let options = {
         url: 'https://api.spotify.com/v1/recommendations?' + 
         querystring.stringify({
-                seed_genres: 'party,hip-hop',
-                min_danceability: min_danceability,
-                min_energy: min_energy,
-                max_energy: max_energy,
+                seed_genres: 'party,hip-hop,pop,dance',
+                min_popularity: 70,
+                min_tempo: min_tempo,
+                max_tempo: max_tempo,
                 limit: 100
             }),
         headers: {'Authorization': `Bearer ${token}`},
         json: true
     };
-    request(options, (error,response,body) => {
-        if (!error && response.statusCode === 200) {
-            body.tracks.forEach(track => {
-                if (track.preview_url !== null) { 
-                    urlObjQueue.push({name: track.name, url: track.preview_url});         
-                }
-            });
-            urlObj = urlObjQueue.pop();
-            console.log('Emitted event');   
-            io.emit('audio change', urlObj.url);
-        }
-    });
+    if (sentimentScore !== null) {
+        request(options, (error,response,body) => {
+            if (!error && response.statusCode === 200) {
+                body.tracks.forEach(track => {
+                    if (track.preview_url !== null) { 
+                        urlObjQueue.push({name: track.name, url: track.preview_url});         
+                    }
+                });
+                urlObj = urlObjQueue.pop();
+                io.emit('audio change', urlObj.url);
+            }
+        });
+    }
     res.render('interface', {
         mood: mood,
         groupID: groupID,
@@ -120,9 +120,9 @@ server.post('/sensordata/:name/:data', (req,res) => {
 
     var dataArr = req.params.data.split(" ")
 
-    var x = []
-    var y = []
-    var z = []
+    var x = [];
+    var y = [];
+    var z = [];
 
     for (var i = 0; i < dataArr.length; i++) {
     	if (i%3 == 0) {
@@ -157,7 +157,6 @@ server.post('/sensordata/:name/:data', (req,res) => {
         if (err) throw err;
         // results is an array consisting of messages collected during execution
         sentimentScore = results[0];
-        console.log(sentimentScore);
     });
 
     res.send("");
@@ -180,7 +179,7 @@ server.get('/authentication', (req,res) => {
         if (!error && response.statusCode === 200) {
             token = body.access_token;
             res.redirect(`/interface/${token}/`);
-        };
+        }
     });
 });
 

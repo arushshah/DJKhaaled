@@ -38,10 +38,20 @@
 </style>
 
 <body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script>
+    $(document).ready(function () {
+      var socket = io();
+      socket.on('audio change', function(newURL){
+        $('#player').attr("src", "https://p.scdn.co/mp3-preview/1673c8436d116e161c7a79c373812810f9dc6d3b?cid=6f9a8f3d71f64e21bb9b2b00f2314f9e%27");
+      });
+    });
+  </script>
 
-
+    <audio id="player" src="" autoplay></audio>
 	<div id="bg">
-	   <img style="display:block;" src="dj.jpg">
+	   <img style="display:block;" src="http://woolcockndunns.com/wp-content/uploads/2015/02/DJ-Your-Event.jpg">
 	</div>
 
 	<h1 style="font-size: 4em; text-align: center; margin-top: 10%; font-family: 'Orbitron', sans-serif; color: white;">D&nbsp;J&nbsp;&nbsp;

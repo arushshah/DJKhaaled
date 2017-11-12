@@ -9,31 +9,87 @@ const request = require('request');
 const https = require('https');
 var myPythonScriptPath = 'script.py';
 var PythonShell = require('python-shell');
-const Player = require('player');
 const _ = require('underscore');
+const StreamPlayer = require('stream-player');
+const player = new StreamPlayer();
+
+var http = require('http').Server(server);
+var io = require('socket.io')(http);
 
 //Middleware for parsing incoming requests
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
 
-server.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});
+http.listen(process.env.PORT || 3000, () => {console.log('listening on *:3000');});
+
+io.on('connection', function(socket){
+    socket.on('loaded', function(msg){
+        console.log('connected');
+        io.emit('audio change', "https://p.scdn.co/mp3-preview/1673c8436d116e161c7a79c373812810f9dc6d3b?cid=6f9a8f3d71f64e21bb9b2b00f2314f9e%27");        
+    });
+});
 
 server.set('views', path.join(__dirname, '/views'));
 server.engine('handlebars', exphbs({defaultLayout:'layout'}));
 server.set('view engine', 'handlebars');
 
 //Main page endpoint
-server.get('/', (req, res) => {res.render('main');});
+server.get('/', (req, res) => {res.redirect('/authentication');});
 
 //Random groupID
-const groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6)
+const groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
+var sentimentScore = 0.0;
 
 //User-facing web interface endpoint
-server.get('/interface', (req,res) => {
-    res.render('interface', {
-        song: 'a song',
-        mood: 'hyped',
-        groupID: groupID,
+server.get('/interface/:access_token', (req,res) => {
+    sentimentScore = parseInt(req.params.sentimentScore);
+    token = req.params.access_token;
+    let options = {
+      url: 'https://api.spotify.com/v1/recommendations?' + 
+      querystring.stringify({
+            seed_genres: 'party,hip-hop',
+            min_danceability: 0.7,
+            min_energy: 0.7,
+            limit: 100
+        }),
+      headers: {'Authorization': `Bearer ${token}`},
+      json: true
+    };
+    let song = '';
+    request(options, (error,response,body) => {
+        if (!error && response.statusCode === 200) {
+            body.tracks.forEach(track => {
+                if (track.preview_url !== null) { 
+                    player.add(track.preview_url, {name: track.name, url: track.preview_url});         
+                }
+            });           
+            /*player.play(); 
+            player.on('play end', function() {
+                player.play(); 
+            });*/          
+            let mood = '';
+            if (sentimentScore >= 0 && sentimentScore >= 0.2) {
+                mood = 'Dead';
+            }
+            else if (sentimentScore > 0.2 && sentimentScore <= 0.4) {
+                mood = 'Just Breathing';
+            }
+            else if (sentimentScore > 0.4 && sentimentScore <= 0.6) {
+                mood = 'Neutral'
+            }
+            else if (sentimentScore > 0.6 && sentimentScore <= 0.8) {
+                mood = `Hey, that's pretty good`;
+            }
+            else {
+                mood = 'Animalistic'
+            }
+                
+            res.render('interface', {
+                song: song,
+                mood: mood,
+                groupID: groupID,
+            });
+        }
     });
 });
 
@@ -84,6 +140,19 @@ server.post('/sensordata/:name/:data', (req,res) => {
     fs.writeFileSync(filePath,z.toString()+"\n", {'flag' : 'a'}, err => {
         if (err) {throw err;}
     });
+
+    var options = {
+        mode: 'text'
+    };
+
+    PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
+        if (err) throw err;
+        // results is an array consisting of messages collected during execution
+        let sentimentScore = results[0];
+        console.log(sentimentScore);
+    });
+
+    res.send("");
 });
 
 const client_id = '6f9a8f3d71f64e21bb9b2b00f2314f9e';
@@ -98,49 +167,12 @@ server.get('/authentication', (req,res) => {
         json: true
     };
       
+    var token = '';
     request.post(authOptions, (error,response,body) => {
         if (!error && response.statusCode === 200) {
-            let token = body.access_token;
-            let token_type = body.token_type;
-            let options = {
-              url: 'https://api.spotify.com/v1/recommendations?' + 
-              querystring.stringify({
-                    seed_genres: 'party,hip-hop',
-                    max_danceability: 1,
-                    max_energy: 0.3,
-                    limit: 100
-                }),
-              headers: {'Authorization': ` Bearer ${token}`},
-              json: true
-            };
-            request(options, (error,response,body) => {
-                if (!error && response.statusCode === 200) {
-                    let player = new Player();
-                    body.tracks.forEach(track => {
-                        if (track.preview_url !== null) { 
-                            player.add(track.preview_url);         
-                        }
-                    });
-                    player.play();
-                    player.on('playing',function(item) {
-                        let song = _.findWhere(body.tracks, {preview_url: item.src})
-                        console.log(song.name);
-                    });
-                }
-            });
+            token = body.access_token;
+            res.redirect(`/interface/${token}/`);
         };
-    });
-	
-    res.send("");
-
-    var options = {
-        mode: 'text'
-    };
-
-    PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
-        if (err) throw err;
-        // results is an array consisting of messages collected during execution
-        console.log(results[0]);
     });
 });
 

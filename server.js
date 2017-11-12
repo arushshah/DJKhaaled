@@ -83,6 +83,13 @@ server.post('/sensordata/:name/:data', (req,res) => {
     fs.writeFileSync(filePath,z.toString()+"\n", {'flag' : 'a'}, err => {
         if (err) {throw err;}
     });
+
+    PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
+        if (err) throw err;
+        // results is an array consisting of messages collected during execution
+        console.log(results[0]);
+    });
+    
 });
 
 const client_id = '6f9a8f3d71f64e21bb9b2b00f2314f9e';
@@ -131,11 +138,6 @@ server.get('/authentication', (req,res) => {
         mode: 'text'
     };
 
-    PythonShell.run('analytics/sentimentanal.py', options, function (err, results) {
-        if (err) throw err;
-        // results is an array consisting of messages collected during execution
-        console.log(results[0]);
-    });
 });
 
 //POST endpoint to initialize file for user

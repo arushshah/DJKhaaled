@@ -120,17 +120,13 @@ server.get('/authentication', (req,res) => {
                             let file = fs.createWriteStream(filePath);
                             https.get(track.preview_url, (response) => {
                                 response.pipe(file);
-                            });     
-                            let player = new Player(track.preview_url);
-                            /*player.play(function(err, player){
-                                console.log('playend!');
-                            });*/                    
+                            });                       
                         }
                     });
-                    /*let player = new Player(`./soundFiles/HipsDon'tLie.mp3`);
+                    let player = new Player(`./soundFiles/HipsDon'tLie.mp3`);
                     player.play(function(err, player){
                         console.log('playend!');
-                    });*/
+                    });
                 }
             });
         };

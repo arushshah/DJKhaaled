@@ -22,7 +22,9 @@ server.engine('handlebars', exphbs({defaultLayout:'layout'}));
 server.set('view engine', 'handlebars');
 
 //Main page endpoint
-server.get('/', (req, res) => {res.render('main');});
+server.get('/', (req, res) => {
+    res.redirect('/interface');
+});
 
 //Random groupID
 const groupID = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6)
@@ -89,7 +91,7 @@ server.post('/sensordata/:name/:data', (req,res) => {
         // results is an array consisting of messages collected during execution
         console.log(results[0]);
     });
-    
+
 });
 
 const client_id = '6f9a8f3d71f64e21bb9b2b00f2314f9e';

@@ -31,8 +31,9 @@ server.get('/code', (req,res) => {
 
 //POST endpoint for sensor data 
 //Should be in form {username: data}
-server.post('/sensordata', (req,res) => {
-    console.log(req.body);
+server.post('/sensordata/:name/:data', (req,res) => {
+    console.log(req.params.name + ": " + req.params.data);
+    res.send("");
 });
 
 //POST endpoint to initialize file for user

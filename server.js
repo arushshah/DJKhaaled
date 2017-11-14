@@ -43,13 +43,19 @@ io.on('connection', function(socket){
 
 //User-facing web interface endpoint
 server.get('/interface/:access_token/', (req,res) => {
+    PythonShell.run('analytics/sentimentanal.py', function (err, results) {
+        if (err) throw err;
+        // results is an array consisting of messages collected during execution
+        sentimentScore = results[0];
+        console.log(sentimentScore)
+    });
     token = req.params.access_token;
     let mood = '';
     let min_tempo = 0;
     let max_tempo = 0;
     if (sentimentScore >= 0 && sentimentScore <= 0.2) {
         mood = 'Dead';
-        min_tempo = 190;
+        min_tempo = 200;
     }
     else if (sentimentScore > 0.2 && sentimentScore <= 0.4) {
         mood = 'Just Breathing';
@@ -68,7 +74,7 @@ server.get('/interface/:access_token/', (req,res) => {
     }
     else {
         mood = 'Animalistic';
-        max_tempo = 160;
+        max_tempo = 100;
     }
     let options = {
         url: 'https://api.spotify.com/v1/recommendations?' + 
@@ -157,6 +163,7 @@ server.post('/sensordata/:name/:data', (req,res) => {
         if (err) throw err;
         // results is an array consisting of messages collected during execution
         sentimentScore = results[0];
+        console.log(sentimentScore)
     });
 
     res.send("");
